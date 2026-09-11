@@ -8,6 +8,12 @@ I'm **Vanessa Baah-Williams**, a cybersecurity professional with an Information 
 
 This portfolio brings together selected projects, security labs, research interests, technical tools and practical work that reflect how I am developing my cybersecurity skills through hands-on experience.
 
+## Published Portfolio
+
+🌐 Live Portfolio: https://vanessa-personal-portfolio.onrender.com/
+
+The live portfolio showcases my cybersecurity projects, technical toolkit, research interests, current areas of exploration and professional journey.
+
 ---
 
 ## About Me
