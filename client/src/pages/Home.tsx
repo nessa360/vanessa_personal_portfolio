@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -11,6 +12,7 @@ import {
   Github,
   Globe2,
   Linkedin,
+  Loader2,
   LockKeyhole,
   Mail,
   Menu,
@@ -58,10 +60,52 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [contactSent, setContactSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [query, setQuery] = useState("");
   const [querySent, setQuerySent] = useState(false);
   const scrollTo = (id: string) => { setMenuOpen(false); document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); };
-  const handleContact = (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); setContactSent(true); };
+  const handleContact = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
+
+    if (!accessKey) {
+      toast.error("Contact service unconfigured", {
+        description: "Please set VITE_WEB3FORMS_ACCESS_KEY in your .env or Vercel project settings.",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const formData = new FormData(form);
+    formData.append("access_key", accessKey);
+    formData.append("from_name", "Vanessa Portfolio Contact");
+    formData.append("subject", `New message from ${formData.get("name") || "Portfolio Visitor"}`);
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setContactSent(true);
+        toast.success("Message sent successfully!");
+        form.reset();
+      } else {
+        toast.error("Could not send message", {
+          description: data.message || "Please try again later or reach out directly by email.",
+        });
+      }
+    } catch (err) {
+      toast.error("Network error", {
+        description: "Failed to reach the email service. Please email directly or try again later.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const handleQuery = (e: FormEvent<HTMLFormElement>) => { e.preventDefault(); setQuerySent(true); };
 
   return <div className="site-shell" id="top">
@@ -82,7 +126,7 @@ export default function Home() {
 
       <section className="journey-section" id="journey"><div className="container journey-grid"><div className="journey-intro"><Eyebrow light>Journey so far</Eyebrow><h2>Always<br /><em>becoming.</em></h2><p>From information studies to hands-on security work, each chapter has made the next question more interesting.</p></div><div className="journey-track"><div className="track-line" />{["Information studies", "Cybersecurity transition", "Hands-on security training", "GRC experience", "VAPT & security labs", "AI & emerging technology", "Cybersecurity research", "MSc Cybersecurity"].map((item, index) => <div className={`journey-step ${index === 7 ? "current" : ""}`} key={item}><span className="step-dot" /><span className="step-number">0{index + 1}</span><span className="step-name">{item}</span>{index === 7 && <span className="current-label">current horizon</span>}</div>)}</div></div></section>
 
-      <section className="contact-section" id="contact"><div className="container contact-grid"><div className="contact-copy"><Eyebrow light>Let’s make a useful connection</Eyebrow><h2>Have a<br />question?</h2><p>Interested in cybersecurity, responsible AI, research or a project that needs a thoughtful security lens? I’d love to hear what you’re working on.</p><div className="contact-details"><div><Mail size={18} /><span>baahwilliamsvanessa@gmail.com<br /><small>Best for project and professional enquiries</small></span></div><div><Globe2 size={18} /><span>Accra, Ghana<br /><small>Open to global conversations</small></span></div></div></div><div className="contact-form-card">{contactSent ? <div className="form-success"><span><Check size={26} /></span><h3>Message received.</h3><p>Thanks for reaching out. Vanessa’s fictional inbox will be in touch shortly.</p><button className="text-link light-link" onClick={() => setContactSent(false)}>Send another message <ArrowRight size={15} /></button></div> : <form onSubmit={handleContact}><div className="form-row"><label>First name<input required placeholder="Ama" /></label><label>Work email<input required type="email" placeholder="ama@company.com" /></label></div><label>What brings you here?<select defaultValue=""><option value="" disabled>Select a conversation</option><option>Cybersecurity / GRC</option><option>Research collaboration</option><option>Responsible AI</option><option>Creative technology</option></select></label><label>Message<textarea required rows={3} placeholder="A little context about what you’re exploring..." /></label><button type="submit" className="button button-primary form-submit">Send a note <Send size={16} /></button><p className="form-disclaimer">Your message will be sent through the portfolio contact form.</p></form>}</div></div></section>
+      <section className="contact-section" id="contact"><div className="container contact-grid"><div className="contact-copy"><Eyebrow light>Let’s make a useful connection</Eyebrow><h2>Have a<br />question?</h2><p>Interested in cybersecurity, responsible AI, research or a project that needs a thoughtful security lens? I’d love to hear what you’re working on.</p><div className="contact-details"><div><Mail size={18} /><span>baahwilliamsvanessa@gmail.com<br /><small>Best for project and professional enquiries</small></span></div><div><Globe2 size={18} /><span>Accra, Ghana<br /><small>Open to global conversations</small></span></div></div></div><div className="contact-form-card">{contactSent ? <div className="form-success"><span><Check size={26} /></span><h3>Message received.</h3><p>Thanks for reaching out! I’ll review your message and get back to you shortly.</p><button className="text-link light-link" onClick={() => setContactSent(false)}>Send another message <ArrowRight size={15} /></button></div> : <form onSubmit={handleContact}><input type="checkbox" name="botcheck" className="hidden" style={{ display: "none" }} /><div className="form-row"><label>First name<input required name="name" placeholder="Ama" /></label><label>Work email<input required name="email" type="email" placeholder="ama@company.com" /></label></div><label>What brings you here?<select name="topic" defaultValue=""><option value="" disabled>Select a conversation</option><option value="Cybersecurity / GRC">Cybersecurity / GRC</option><option value="Research collaboration">Research collaboration</option><option value="Responsible AI">Responsible AI</option><option value="Creative technology">Creative technology</option></select></label><label>Message<textarea required name="message" rows={3} placeholder="A little context about what you’re exploring..." /></label><button type="submit" disabled={isSubmitting} className="button button-primary form-submit" style={{ opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}>{isSubmitting ? <>Sending... <Loader2 size={16} className="animate-spin" /></> : <>Send a note <Send size={16} /></>}</button><p className="form-disclaimer">Your message will be sent through the portfolio contact form.</p></form>}</div></div></section>
 
       <section className="query-section"><div className="container query-inner"><div className="query-icon"><Search size={20} /></div><div><Eyebrow>Still curious?</Eyebrow><h2>Search the <em>signal.</em></h2><p>Try a topic: AI security, GRC, VAPT, research...</p></div><form onSubmit={handleQuery} className="query-form"><input aria-label="Search topics" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="What are you exploring?" /><button type="submit"><ArrowRight size={18} /></button>{querySent && <span className="query-result"><Check size={13} /> Noted: {query || "curiosity"}</span>}</form></div></section>
     </main>
